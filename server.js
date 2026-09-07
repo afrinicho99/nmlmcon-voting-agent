@@ -202,3 +202,53 @@ app.get("/health", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Voting agent running on port ${PORT}`);
 });
+app.get("/test-browser", async (req, res) => {
+  let browser;
+
+  try {
+    console.log("Starting Playwright browser test...");
+
+    browser = await chromium.launch({
+      headless: true,
+    });
+
+    const page = await browser.newPage();
+
+    await page.goto("https://mohannualcon.com/online-voting", {
+      waitUntil: "domcontentloaded",
+      timeout: 60000,
+    });
+
+    await page.waitForTimeout(5000);
+
+    const title = await page.title();
+    const url = page.url();
+    const bodyText = await page.locator("body").innerText();
+
+    console.log("Browser test completed.");
+    console.log("Page title:", title);
+    console.log("Page URL:", url);
+    console.log("Page text length:", bodyText.length);
+
+    res.json({
+      success: true,
+      title,
+      url,
+      textLength: bodyText.length,
+      message: "Playwright successfully opened the voting page.",
+    });
+
+  } catch (error) {
+    console.error("Browser test failed:", error);
+
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+
+  } finally {
+    if (browser) {
+      await browser.close();
+    }
+  }
+});
