@@ -252,3 +252,78 @@ app.get("/test-browser", async (req, res) => {
     }
   }
 });
+app.get("/inspect-voting-page", async (req, res) => {
+  let browser;
+
+  try {
+    browser = await chromium.launch({
+      headless: true,
+    });
+
+    const page = await browser.newPage({
+      viewport: {
+        width: 1440,
+        height: 900,
+      },
+    });
+
+    await page.goto(
+      "https://mohannualcon.com/online-voting",
+      {
+        waitUntil: "domcontentloaded",
+        timeout: 60000,
+      }
+    );
+
+    await page.waitForTimeout(5000);
+
+    const data = await page.evaluate(() => {
+      const buttons = [...document.querySelectorAll("button")]
+        .map((button, index) => ({
+          index,
+          text: button.innerText.trim(),
+          ariaLabel: button.getAttribute("aria-label"),
+          disabled: button.disabled,
+          className: button.className,
+        }))
+        .filter((button) => button.text);
+
+      const inputs = [...document.querySelectorAll("input")]
+        .map((input, index) => ({
+          index,
+          type: input.type,
+          name: input.name,
+          placeholder: input.placeholder,
+          value: input.value,
+        }));
+
+      const text = document.body.innerText;
+
+      return {
+        title: document.title,
+        url: location.href,
+        text,
+        buttons,
+        inputs,
+      };
+    });
+
+    res.json({
+      success: true,
+      data,
+    });
+
+  } catch (error) {
+    console.error("Inspection failed:", error);
+
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+
+  } finally {
+    if (browser) {
+      await browser.close();
+    }
+  }
+});
