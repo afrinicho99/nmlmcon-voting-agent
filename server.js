@@ -195,3 +195,10 @@ app.post("/vote", async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Voting agent running on port ${PORT}`);
 });
+app.get("/health", (req, res) => {
+  res.status(200).send("NMLMCON VOTING AGENT IS ALIVE");
+});
+
+app.listen(PORT, () => {
+  console.log(`Voting agent running on port ${PORT}`);
+});
